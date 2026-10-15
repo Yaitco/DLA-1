@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 
-import torchaudio
+import soundfile as sf
 from tqdm import tqdm
 
 from datasets import load_dataset
@@ -37,8 +37,8 @@ class CommonVoiceDataset(BaseDataset):
                 ).exists(), f"Path {entry['path']} doesn't exist"
                 entry["path"] = str(Path(entry["path"]).absolute().resolve())
                 entry["text"] = self._regex.sub("", entry.get("sentence", "").lower())
-                t_info = torchaudio.info(entry["path"])
-                entry["audio_len"] = t_info.num_frames / t_info.sample_rate
+                t_info = sf.info(entry["path"])
+                entry["audio_len"] = t_info.frames / t_info.samplerate
                 index.append(
                     {
                         "path": entry["path"],
