@@ -1,0 +1,33 @@
+defaults:
+  - baseline
+  - override model: conformer
+  - override datasets: librispeech100
+  - override transforms: log_mel
+  - _self_
+
+model:
+  num_layers: 8
+
+dataloader:
+  batch_size: 8
+  num_workers: 2
+
+optimizer:
+  lr: 3e-5
+
+lr_scheduler:
+  max_lr: 3e-4
+  div_factor: 10
+  final_div_factor: 100
+  pct_start: 0.1
+
+trainer:
+  n_epochs: 50
+  epoch_len: 1000 # training steps per validation interval
+  log_step: 100
+  max_grad_norm: 5
+  skip_oom: false
+
+writer:
+  run_name: conformer_ls100_v1
+  mode: offline
