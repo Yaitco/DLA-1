@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
@@ -45,6 +46,11 @@ class Trainer(BaseTrainer):
 
         all_losses = self.criterion(**batch)
         batch.update(all_losses)
+
+        if not torch.isfinite(batch["loss"]).all():
+            raise FloatingPointError(
+                f"Non-finite loss for audio files: {batch['audio_path']}"
+            )
 
         if self.is_train:
             batch["loss"].backward()  # sum of all losses is always called loss
