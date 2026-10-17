@@ -1,0 +1,17 @@
+defaults:
+  - conformer_16x144_bpe
+  - override datasets: librispeech460
+  - _self_
+
+optimizer:
+  lr: 1e-5
+
+lr_scheduler:
+  max_lr: 1e-4
+
+trainer:
+  from_pretrained: null
+  n_epochs: 50
+
+writer:
+  run_name: conformer_16x144_bpe256_ls460_finetune_b16_50k_v1

@@ -1,0 +1,18 @@
+defaults:
+  - conformer_train
+  - override transforms: log_mel_aug
+  - _self_
+
+dataloader:
+  batch_size: 16
+
+loss_function:
+  zero_infinity: true
+
+trainer:
+  n_epochs: 25
+  save_period: 1
+
+writer:
+  run_name: conformer_aug_b16_25k_v2
+  log_checkpoints: true

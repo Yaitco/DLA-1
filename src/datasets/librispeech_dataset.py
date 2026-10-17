@@ -23,23 +23,19 @@ URL_LINKS = {
 
 class LibrispeechDataset(BaseDataset):
     def __init__(self, part, data_dir=None, *args, **kwargs):
-        assert part in URL_LINKS or part == "train_all"
+        if part == "train_all":
+            parts = [name for name in URL_LINKS if name.startswith("train")]
+        else:
+            parts = [part] if isinstance(part, str) else list(part)
+        assert parts and all(name in URL_LINKS for name in parts)
 
         if data_dir is None:
             data_dir = ROOT_PATH / "data" / "datasets" / "librispeech"
             data_dir.mkdir(exist_ok=True, parents=True)
-        self._data_dir = data_dir
-        if part == "train_all":
-            index = sum(
-                [
-                    self._get_or_load_index(part)
-                    for part in URL_LINKS
-                    if "train" in part
-                ],
-                [],
-            )
-        else:
-            index = self._get_or_load_index(part)
+        self._data_dir = Path(data_dir)
+        index = []
+        for name in parts:
+            index.extend(self._get_or_load_index(name))
 
         super().__init__(index, *args, **kwargs)
 

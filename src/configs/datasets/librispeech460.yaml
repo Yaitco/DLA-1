@@ -1,0 +1,8 @@
+defaults:
+  - librispeech100
+  - _self_
+
+train:
+  part: [train-clean-100, train-clean-360]
+  max_audio_length: null
+  max_text_length: null

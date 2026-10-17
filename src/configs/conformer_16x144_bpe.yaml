@@ -1,0 +1,10 @@
+defaults:
+  - conformer_16x144
+  - _self_
+
+text_encoder:
+  _target_: src.text_encoder.BPETextEncoder
+  model_path: data/tokenizers/bpe_256.model
+
+writer:
+  run_name: conformer_16x144_bpe256_aug_b16_25k_v1

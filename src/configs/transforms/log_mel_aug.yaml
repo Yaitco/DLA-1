@@ -1,0 +1,28 @@
+defaults:
+  - log_mel
+  - _self_
+
+instance_transforms:
+  train:
+    get_spectrogram: ${transforms.instance_transforms.inference.get_spectrogram}
+    audio:
+      _target_: torchvision.transforms.v2.Compose
+      transforms:
+        - _target_: src.transforms.wav_augs.SpeedPerturbation
+          sample_rate: 16000
+          speeds: [0.9, 1.1]
+          p: 0.3
+        - _target_: src.transforms.wav_augs.Reverb
+          sample_rate: 16000
+          rt60_seconds: [0.3, 0.5]
+          wet: 0.5
+          p: 0.3
+          tail_strength: 1.0
+        - _target_: src.transforms.wav_augs.AddGaussianNoise
+          min_snr_db: 15.0
+          max_snr_db: 30.0
+          p: 0.5
+        - _target_: src.transforms.wav_augs.Gain
+          min_gain_in_db: -6.0
+          max_gain_in_db: 6.0
+          p: 0.5

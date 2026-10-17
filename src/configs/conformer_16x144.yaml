@@ -1,0 +1,11 @@
+defaults:
+  - conformer_aug
+  - _self_
+
+model:
+  num_layers: 16
+  d_model: 144
+  num_heads: 4
+
+writer:
+  run_name: conformer_16x144_aug_b16_25k_v1

@@ -1,8 +1,10 @@
+import json
 import warnings
 
 import hydra
 import torch
 from hydra.utils import instantiate
+from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
 from src.trainer import Inferencer
@@ -51,6 +53,7 @@ def main(config):
     # save_path for model predictions
     save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
     save_path.mkdir(exist_ok=True, parents=True)
+    OmegaConf.save(config, save_path / "config.yaml", resolve=True)
 
     inferencer = Inferencer(
         model=model,
@@ -65,6 +68,9 @@ def main(config):
     )
 
     logs = inferencer.run_inference()
+    (save_path / "metrics.json").write_text(
+        json.dumps(logs, indent=2), encoding="utf-8"
+    )
 
     for part in logs.keys():
         for key, value in logs[part].items():
