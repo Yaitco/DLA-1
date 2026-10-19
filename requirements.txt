@@ -2,17 +2,22 @@
 torch==2.7.1+cu128
 torchvision==0.22.1+cu128
 torchaudio==2.7.1+cu128
-datasets==2.21.0
+huggingface_hub
+gdown==6.0.0
+uv==0.13.1
+requests
 pyarrow==19.0.1
 soundfile
 wget==3.2
 numpy==1.26.4
+scipy==1.15.3
 sentencepiece
+pyctcdecode==0.5.0
+kenlm==0.3.0
 torch_audiomentations
 tqdm
 matplotlib
 pandas
-wandb
 comet_ml
 hydra-core
 

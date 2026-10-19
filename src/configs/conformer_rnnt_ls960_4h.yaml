@@ -1,0 +1,47 @@
+defaults:
+  - conformer_rnnt_train
+  - override datasets: librispeech960
+  - override transforms: log_mel_specaug_light
+  - _self_
+
+datasets:
+  train:
+    max_audio_length: 20.0
+    max_text_length: null
+
+dataloader:
+  batch_size: 4
+
+evaluation_batch_size: 16
+evaluation_single_item_above_seconds: 20.0
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-4
+  betas: [0.9, 0.98]
+  eps: 1e-9
+  weight_decay: 1e-6
+
+# Replace the inherited OneCycle configuration completely.
+lr_scheduler: ${transformer_scheduler}
+transformer_scheduler:
+  _target_: torch.optim.lr_scheduler.LambdaLR
+  lr_lambda:
+    _target_: src.utils.lr_scheduler.warmup_inverse_sqrt
+    _partial_: true
+    warmup_steps: 10000
+
+trainer:
+  encoder_checkpoint: null
+  from_pretrained: saved/conformer_rnnt_bpe256_ls100_b8_10k_v1/model_best.pth
+  # Resume this new run with resume_from=<file> and from_pretrained=null.
+  resume_from: null
+  encoder_lr: 3e-6
+  n_epochs: 36
+  epoch_len: 2000
+  log_step: 100
+  save_period: 1
+  monitor: "min val_other_WER_(Greedy)"
+
+writer:
+  run_name: conformer_rnnt_bpe256_ls960_b4_warmup_sqrt_4h_v1

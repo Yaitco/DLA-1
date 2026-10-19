@@ -1,0 +1,11 @@
+defaults:
+  - inference_bpe
+  - override datasets: librispeech_test
+  - _self_
+
+text_encoder:
+  model_path: saved/conformer_bpe_finetune_20261017_210755_1880/bpe_256.model
+
+inferencer:
+  from_pretrained: saved/conformer_bpe_finetune_20261017_210755_1880/model_best.pth
+  save_path: conformer_bpe_ls460_test_clean_beam20_v1

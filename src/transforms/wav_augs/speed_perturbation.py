@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torchaudio
+from torch import nn
 
 
 class SpeedPerturbation(nn.Module):
@@ -20,5 +20,5 @@ class SpeedPerturbation(nn.Module):
     def forward(self, audio: torch.Tensor) -> torch.Tensor:
         if self.p < torch.rand(1):
             return audio
-        audio, _ = self._aug(audio) 
+        audio, _ = self._aug(audio)
         return audio

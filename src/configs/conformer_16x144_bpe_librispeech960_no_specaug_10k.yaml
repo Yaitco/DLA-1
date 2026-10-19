@@ -1,0 +1,12 @@
+defaults:
+  - conformer_16x144_bpe_librispeech960_no_specaug
+  - _self_
+
+# Stop after the first 10k updates of the original 100k cosine schedule.
+# Keep the schedule so the experiment can later continue from a checkpoint.
+trainer:
+  n_epochs: 10
+  save_period: 1
+
+writer:
+  run_name: conformer_bpe_ls960_no_specaug_b16_10k_cosine_lr1e5_v1

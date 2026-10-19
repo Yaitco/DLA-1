@@ -1,0 +1,17 @@
+defaults:
+  - log_mel
+  - _self_
+
+instance_transforms:
+  train:
+    get_spectrogram: ${transforms.instance_transforms.inference.get_spectrogram}
+    spectrogram:
+      _target_: torchvision.transforms.v2.Compose
+      transforms:
+        - _target_: src.transforms.spec_augs.FrequencyMasking
+          freq_mask_param: 27
+          num_masks: 2
+        - _target_: src.transforms.spec_augs.TimeMasking
+          time_mask_param: 1000
+          max_time_ratio: 0.05
+          num_masks: 10

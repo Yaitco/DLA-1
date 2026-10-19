@@ -1,10 +1,10 @@
 defaults:
-  - model: baseline
-  - writer: wandb
+  - model: conformer
+  - writer: cometml
   - metrics: example
-  - datasets: example
+  - datasets: librispeech100
   - dataloader: example
-  - transforms: example_only_instance
+  - transforms: log_mel
   - _self_
 optimizer:
   _target_: torch.optim.AdamW

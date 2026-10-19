@@ -1,0 +1,6 @@
+train: []
+inference:
+  - _target_: src.metrics.RNNTCERMetric
+    name: "CER_(Greedy)"
+  - _target_: src.metrics.RNNTWERMetric
+    name: "WER_(Greedy)"

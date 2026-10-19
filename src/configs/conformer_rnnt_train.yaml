@@ -1,0 +1,60 @@
+defaults:
+  - baseline
+  - override model: conformer_rnnt
+  - override writer: cometml
+  - override metrics: rnnt
+  - override datasets: librispeech100
+  - override transforms: log_mel
+  - _self_
+
+text_encoder:
+  _target_: src.text_encoder.BPETextEncoder
+  model_path: resources/tokenizers/bpe_256.model
+
+loss_function:
+  _target_: src.loss.RNNTLossWrapper
+  blank_id: 0
+  reduction: mean
+
+datasets:
+  train:
+    max_text_length: null
+
+dataloader:
+  batch_size: 4
+  num_workers: 2
+
+evaluation_batch_size: 8
+evaluation_single_item_above_seconds: 20.0
+
+optimizer:
+  lr: 3e-4
+  weight_decay: 0.01
+
+# Parameter groups: pretrained encoder, then randomly initialized predictor/joint.
+lr_scheduler:
+  max_lr: ["${trainer.encoder_lr}", "${optimizer.lr}"]
+  div_factor: 10
+  final_div_factor: 100
+  pct_start: 0.1
+  cycle_momentum: false
+
+trainer:
+  encoder_checkpoint: saved/conformer_bpe_ls960_night_b16_108k_cosine_lr1e5_v1/model_best.pth
+  encoder_lr: 1e-5
+  from_pretrained: null
+  resume_from: null
+  n_epochs: 10
+  epoch_len: 1000
+  log_step: 100
+  max_grad_norm: 5
+  skip_oom: false
+  monitor: "min val_WER_(Greedy)"
+  save_period: 1
+
+writer:
+  workspace: alex-markotenko
+  project_name: dla-1
+  run_name: conformer_rnnt_bpe256_ls100_b4_10k_v1
+  mode: online
+  log_checkpoints: false

@@ -1,0 +1,12 @@
+defaults:
+  - conformer_16x144_specaug_light
+  - _self_
+
+optimizer:
+  lr: 1e-5
+
+lr_scheduler:
+  max_lr: 1e-4
+
+writer:
+  run_name: conformer_16x144_aug_specaug_light_lr1e4_b16_25k_v1

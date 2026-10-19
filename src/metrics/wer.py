@@ -6,9 +6,21 @@ from torch import Tensor
 from src.metrics.base_metric import BaseMetric
 from src.metrics.utils import calc_wer
 
-# TODO beam search / LM versions
-# Note: they can be written in a pretty way
-# Note 2: overall metric design can be significantly improved
+
+class RNNTWERMetric(BaseMetric):
+    def __init__(self, text_encoder, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.text_encoder = text_encoder
+
+    def __call__(self, predictions: list[str], text: list[str], **kwargs) -> float:
+        wers = []
+        for prediction, target in zip(predictions, text):
+            wers.append(
+                calc_wer(self.text_encoder.normalize_text(target).strip(), prediction)
+            )
+        return sum(wers) / len(wers)
+
+
 class BeamSearchWERMetric(BaseMetric):
     def __init__(self, text_encoder, beam_size, token_topk, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,12 +35,12 @@ class BeamSearchWERMetric(BaseMetric):
         predictions = []
         for i in range(len(log_probs)):
             prediction = self.text_encoder.ctc_beam_search(
-                log_probs[i, :int(log_probs_length[i])],
+                log_probs[i, : int(log_probs_length[i])],
                 beam_size=self.beam_size,
                 token_topk=self.token_topk,
             )
             predictions.append(prediction)
-        
+
         for pred_text, target_text in zip(predictions, text):
             target_text = self.text_encoder.normalize_text(target_text)
             cers.append(calc_wer(target_text, pred_text))

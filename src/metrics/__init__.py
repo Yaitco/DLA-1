@@ -1,2 +1,2 @@
-from src.metrics.cer import ArgmaxCERMetric, BeamSearchCERMetric
-from src.metrics.wer import ArgmaxWERMetric, BeamSearchWERMetric
+from src.metrics.cer import ArgmaxCERMetric, BeamSearchCERMetric, RNNTCERMetric
+from src.metrics.wer import ArgmaxWERMetric, BeamSearchWERMetric, RNNTWERMetric

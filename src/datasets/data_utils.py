@@ -43,6 +43,25 @@ def move_batch_transforms_to_device(batch_transforms, device):
                 transforms[transform_name] = transforms[transform_name].to(device)
 
 
+def get_evaluation_batches(index, batch_size, single_item_above_seconds):
+    batches = []
+    batch = []
+    for idx, record in enumerate(index):
+        if record["audio_len"] > single_item_above_seconds:
+            if batch:
+                batches.append(batch)
+                batch = []
+            batches.append([idx])
+        else:
+            batch.append(idx)
+            if len(batch) == batch_size:
+                batches.append(batch)
+                batch = []
+    if batch:
+        batches.append(batch)
+    return batches
+
+
 def get_dataloaders(config, text_encoder, device):
     """
     Create dataloaders for each of the dataset partitions.
@@ -71,19 +90,38 @@ def get_dataloaders(config, text_encoder, device):
         dataset = instantiate(
             config.datasets[dataset_partition], text_encoder=text_encoder
         )  # instance transforms are defined inside
+        if len(dataset) == 0:
+            raise ValueError(f"Dataset partition {dataset_partition} contains no audio")
 
-        assert config.dataloader.batch_size <= len(dataset), (
-            f"The batch size ({config.dataloader.batch_size}) cannot "
+        batch_size = config.dataloader.batch_size
+        if dataset_partition != "train":
+            batch_size = min(
+                config.get("evaluation_batch_size", batch_size), len(dataset)
+            )
+
+        assert batch_size <= len(dataset), (
+            f"The batch size ({batch_size}) cannot "
             f"be larger than the dataset length ({len(dataset)})"
         )
+
+        loader_kwargs = dict(
+            batch_size=batch_size,
+            drop_last=(dataset_partition == "train"),
+            shuffle=(dataset_partition == "train"),
+        )
+        threshold = config.get("evaluation_single_item_above_seconds")
+        if dataset_partition != "train" and threshold is not None:
+            loader_kwargs["batch_sampler"] = get_evaluation_batches(
+                dataset._index, batch_size, threshold
+            )
+            loader_kwargs["batch_size"] = 1  # required with a custom batch_sampler
 
         partition_dataloader = instantiate(
             config.dataloader,
             dataset=dataset,
             collate_fn=collate_fn,
-            drop_last=(dataset_partition == "train"),
-            shuffle=(dataset_partition == "train"),
             worker_init_fn=set_worker_seed,
+            **loader_kwargs,
         )
         dataloaders[dataset_partition] = partition_dataloader
 

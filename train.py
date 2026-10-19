@@ -41,7 +41,16 @@ def main(config):
     dataloaders, batch_transforms = get_dataloaders(config, text_encoder, device)
 
     # build model architecture, then print to console
-    model = instantiate(config.model, n_tokens=len(text_encoder)).to(device)
+    model = instantiate(config.model, n_tokens=len(text_encoder))
+    encoder_checkpoint = config.trainer.get("encoder_checkpoint")
+    if (
+        encoder_checkpoint is not None
+        and config.trainer.get("resume_from") is None
+        and config.trainer.get("from_pretrained") is None
+    ):
+        model.load_encoder_from_ctc(encoder_checkpoint)
+        logger.info("Loaded CTC encoder from %s", encoder_checkpoint)
+    model = model.to(device)
     logger.info(model)
 
     # get function handles of loss and metrics
@@ -57,8 +66,25 @@ def main(config):
 
     # build optimizer, learning rate scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = instantiate(config.optimizer, params=trainable_params)
-    lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
+    encoder_lr = config.trainer.get("encoder_lr")
+    if encoder_lr is not None:
+        trainable_params = [
+            {
+                "params": [p for p in model.encoder.parameters() if p.requires_grad],
+                "lr": encoder_lr,
+            },
+            {
+                "params": [
+                    p
+                    for name, p in model.named_parameters()
+                    if p.requires_grad and not name.startswith("encoder.")
+                ],
+            },
+        ]
+    optimizer = instantiate(config.optimizer, params=trainable_params, _convert_="all")
+    lr_scheduler = instantiate(
+        config.lr_scheduler, optimizer=optimizer, _convert_="all"
+    )
 
     # epoch_len = number of iterations for iteration-based training
     # epoch_len = None or len(dataloader) for epoch-based training

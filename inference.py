@@ -25,6 +25,8 @@ def main(config):
         config (DictConfig): hydra experiment config.
     """
     set_random_seed(config.inferencer.seed)
+    if config.inferencer.get("num_threads") is not None:
+        torch.set_num_threads(config.inferencer.num_threads)
 
     if config.inferencer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"

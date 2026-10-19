@@ -1,0 +1,11 @@
+defaults:
+  - librispeech460
+  - _self_
+
+train:
+  part: train_all
+
+val_other:
+  _target_: src.datasets.LibrispeechDataset
+  part: dev-other
+  instance_transforms: ${transforms.instance_transforms.inference}

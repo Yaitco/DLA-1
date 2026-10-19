@@ -1,0 +1,16 @@
+defaults:
+  - inference
+  - _self_
+
+model:
+  num_layers: 16
+  d_model: 144
+  num_heads: 4
+
+text_encoder:
+  _target_: src.text_encoder.BPETextEncoder
+  model_path: data/tokenizers/bpe_256.model
+
+inferencer:
+  save_path: conformer_16x144_bpe256_beam20_dev_v1
+  from_pretrained: saved/conformer_16x144_bpe256_aug_b16_25k_v1/model_best.pth

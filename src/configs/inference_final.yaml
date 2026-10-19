@@ -1,0 +1,32 @@
+defaults:
+  - inference_bpe
+  - override datasets: custom_dir
+  - _self_
+
+metrics:
+  inference: []
+
+dataloader:
+  batch_size: 8
+  num_workers: 0
+
+evaluation_batch_size: 8
+evaluation_single_item_above_seconds: 20.0
+
+text_encoder:
+  model_path: resources/tokenizers/bpe_256.model
+
+inferencer:
+  from_pretrained: saved/final/model.pth
+  save_path: final_predictions
+  num_threads: 2
+  decoding: lm
+  beam_size: 50
+  token_topk: 5
+
+lm_decoder:
+  _target_: src.text_encoder.lm_decoder.CTCLMDecoder
+  lm_path: data/lm/librispeech/3-gram.pruned.1e-7.lower.arpa
+  unigrams_path: data/lm/librispeech/unigrams.txt
+  alpha: 0.8
+  beta: 2.0

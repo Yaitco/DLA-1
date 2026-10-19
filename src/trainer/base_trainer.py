@@ -48,7 +48,7 @@ class BaseTrainer:
             dataloaders (dict[DataLoader]): dataloaders for different
                 sets of data.
             logger (Logger): logger that logs output.
-            writer (WandBWriter | CometMLWriter): experiment tracker.
+            writer (CometMLWriter): experiment tracker.
             epoch_len (int | None): number of steps in each epoch for
                 iteration-based training. If None, use epoch-based
                 training (len(dataloader)).
@@ -243,6 +243,10 @@ class BaseTrainer:
             if batch_idx + 1 >= self.epoch_len:
                 break
 
+        del batch
+        self.optimizer.zero_grad(set_to_none=True)
+        if torch.device(self.device).type == "cuda":
+            torch.cuda.empty_cache()
         logs = last_train_metrics
 
         # Run val/test
@@ -282,6 +286,9 @@ class BaseTrainer:
                 batch_idx, batch, part
             )  # log only the last batch during inference
 
+        del batch
+        if torch.device(self.device).type == "cuda":
+            torch.cuda.empty_cache()
         return self.evaluation_metrics.result()
 
     def _monitor_performance(self, logs, not_improved_count):

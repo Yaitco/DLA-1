@@ -1,0 +1,7 @@
+defaults:
+  - conformer_aug
+  - override transforms: log_mel_aug_specaug_light
+  - _self_
+
+writer:
+  run_name: conformer_aug_specaug_light_b16_25k_v1

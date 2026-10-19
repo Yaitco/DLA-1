@@ -1,0 +1,9 @@
+defaults:
+  - conformer_rnnt_train
+  - _self_
+
+dataloader:
+  batch_size: 8
+
+writer:
+  run_name: conformer_rnnt_bpe256_ls100_b8_10k_v1

@@ -5,7 +5,8 @@ import numpy as np
 import sentencepiece as spm
 import torch
 
-from src.text_encoder.ctc_text_encoder import Beam, CTCTextEncoder
+from src.text_encoder.beam import Beam
+from src.text_encoder.ctc_text_encoder import CTCTextEncoder
 
 
 class BPETextEncoder:

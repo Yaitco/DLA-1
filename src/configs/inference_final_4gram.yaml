@@ -1,0 +1,7 @@
+defaults:
+  - inference_final
+  - _self_
+
+lm_decoder:
+  lm_path: data/lm/librispeech/4-gram.lower.arpa
+  unigrams_path: data/lm/librispeech/4-gram.unigrams.txt

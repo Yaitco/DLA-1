@@ -1,0 +1,16 @@
+defaults:
+  - log_mel_aug
+  - _self_
+
+instance_transforms:
+  train:
+    spectrogram:
+      _target_: torchvision.transforms.v2.Compose
+      transforms:
+        - _target_: src.transforms.spec_augs.FrequencyMasking
+          freq_mask_param: 16
+          num_masks: 1
+        - _target_: src.transforms.spec_augs.TimeMasking
+          time_mask_param: 1000
+          max_time_ratio: 0.03
+          num_masks: 2

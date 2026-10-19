@@ -93,7 +93,7 @@ class BaseDataset(Dataset):
         }
 
         instance_data = self.preprocess_data(instance_data, audio_only=True)
-        
+
         spectrogram = self.get_spectrogram(instance_data["audio"])
         instance_data["spectrogram"] = spectrogram
 
@@ -146,10 +146,14 @@ class BaseDataset(Dataset):
             for transform_name in self.instance_transforms.keys():
                 if transform_name == "get_spectrogram":
                     continue  # skip special key
-                if audio_only and transform_name != "audio" \
-                    or not audio_only and transform_name == "audio":
+                if (
+                    audio_only
+                    and transform_name != "audio"
+                    or not audio_only
+                    and transform_name == "audio"
+                ):
                     continue
-                    
+
                 instance_data[transform_name] = self.instance_transforms[
                     transform_name
                 ](instance_data[transform_name])

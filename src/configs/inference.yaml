@@ -1,13 +1,25 @@
 defaults:
-  - model: baseline
-  - metrics: example
-  - datasets: example_eval # we do not want to run inference on training data
+  - model: conformer
+  - metrics: beam_search
+  - datasets: librispeech_dev
   - dataloader: example
-  - transforms: example
+  - transforms: log_mel
   - _self_
+
+model:
+  num_layers: 8
+
+dataloader:
+  batch_size: 16
+
+text_encoder:
+  _target_: src.text_encoder.CTCTextEncoder
+
 inferencer:
-  device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
-  device: auto # device name or "auto"
-  save_path: "example" # any name here, can be a dataset name
+  device_tensors: ["spectrogram"]
+  device: auto
+  save_path: "conformer_aug_beam20_dev_v1"
   seed: 1
-  from_pretrained: "saved/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/conformer_aug_b16_25k_v2/model_best.pth"
+  beam_size: 20
+  token_topk: 10

@@ -1,9 +1,11 @@
 from pathlib import Path
 
 import torch
+from hydra.utils import instantiate
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
+from src.metrics.utils import calc_cer, calc_wer
 from src.trainer.base_trainer import BaseTrainer
 
 
@@ -64,6 +66,16 @@ class Inferencer(BaseTrainer):
         self.batch_transforms = batch_transforms
 
         self.text_encoder = text_encoder
+        self.decoding = self.cfg_trainer.get("decoding", "beam_search")
+        if self.decoding not in {"argmax", "beam_search", "lm"}:
+            raise ValueError("decoding must be argmax, beam_search or lm")
+
+        self.lm_decoder = (
+            instantiate(config.lm_decoder, text_encoder=text_encoder)
+            if self.decoding == "lm"
+            else None
+        )
+        self.decoded_metrics = MetricTracker("CER", "WER", writer=None)
 
         # define dataloaders
         self.evaluation_dataloaders = {k: v for k, v in dataloaders.items()}
@@ -122,41 +134,58 @@ class Inferencer(BaseTrainer):
                 the dataloader (possibly transformed via batch transform)
                 and model outputs.
         """
-        # TODO change inference logic so it suits ASR assignment
-        # and task pipeline
-
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
         outputs = self.model(**batch)
         batch.update(outputs)
 
-        if metrics is not None:
-            for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch), n=len(batch["text"]))
+        labeled = [
+            i
+            for i, text in enumerate(batch["text"])
+            if self.text_encoder.normalize_text(text).strip()
+        ]
 
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
+        if metrics is not None and labeled:
+            for met in self.metrics["inference"]:
+                value = met(
+                    log_probs=batch["log_probs"][labeled],
+                    log_probs_length=batch["log_probs_length"][labeled],
+                    text=[batch["text"][i] for i in labeled],
+                )
+                metrics.update(met.name, value, n=len(labeled))
 
         batch_size = len(batch["text"])
 
         for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            length = int(batch['log_probs_length'][i])
-            log_probs = batch['log_probs'][i, :length]
+            length = int(batch["log_probs_length"][i])
+            log_probs = batch["log_probs"][i, :length]
 
-            pred_text = self.text_encoder.ctc_beam_search(
-                log_probs,
-                beam_size=self.cfg_trainer.beam_size,
-                token_topk=self.cfg_trainer.token_topk,
-            )
+            if self.decoding == "argmax":
+                pred_text = self.text_encoder.ctc_decode(log_probs.argmax(-1).tolist())
 
+            elif self.decoding == "lm":
+                pred_text = self.lm_decoder.decode(
+                    log_probs, self.cfg_trainer.beam_size
+                )
+
+            else:
+                pred_text = self.text_encoder.ctc_beam_search(
+                    log_probs,
+                    beam_size=self.cfg_trainer.beam_size,
+                    token_topk=self.cfg_trainer.token_topk,
+                )
+            pred_text = self.text_encoder.normalize_text(pred_text).strip()
+            target = self.text_encoder.normalize_text(batch["text"][i]).strip()
+
+            if target:
+                self.decoded_metrics.update("CER", calc_cer(target, pred_text))
+                self.decoded_metrics.update("WER", calc_wer(target, pred_text))
+                self.labeled_recordings += 1
 
             output_id = Path(batch["audio_path"][i]).stem
 
             if self.save_path is not None:
-                # you can use safetensors or other lib here
                 output_path = self.save_path / part / f"{output_id}.txt"
                 output_path.write_text(pred_text, encoding="utf-8")
 
@@ -175,6 +204,8 @@ class Inferencer(BaseTrainer):
 
         self.is_train = False
         self.model.eval()
+        self.decoded_metrics.reset()
+        self.labeled_recordings = 0
 
         if self.evaluation_metrics is not None:
             self.evaluation_metrics.reset()
@@ -196,8 +227,15 @@ class Inferencer(BaseTrainer):
                     metrics=self.evaluation_metrics,
                 )
 
-        return (
+        logs = (
             self.evaluation_metrics.result()
             if self.evaluation_metrics is not None
             else {}
         )
+        logs.update(
+            recordings=len(dataloader.dataset),
+            labeled_recordings=self.labeled_recordings,
+        )
+        if self.labeled_recordings:
+            logs.update(self.decoded_metrics.result())
+        return logs

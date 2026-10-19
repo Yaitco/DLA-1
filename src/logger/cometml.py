@@ -198,6 +198,7 @@ class CometMLWriter:
             file_name=self._object_name(audio_name),
             audio_data=audio,
             sample_rate=sample_rate,
+            normalize_data="OFF",
             step=self.step,
         )
 

@@ -1,0 +1,18 @@
+defaults:
+  - conformer_16x144_bpe_librispeech960
+  - _self_
+
+optimizer:
+  lr: 1e-5
+
+lr_scheduler:
+  max_lr: 1e-4
+
+trainer:
+  from_pretrained: saved/conformer_bpe_ls960_specaug_b16_50k_v1/model_best.pth
+  resume_from: null
+  n_epochs: 100
+  epoch_len: 1000
+
+writer:
+  run_name: conformer_bpe_ls960_continue_b16_100k_lr1e4_v1

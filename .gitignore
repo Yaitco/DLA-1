@@ -112,3 +112,18 @@ outputs/
 .vscode/
 .idea/
 __MACOSX/
+
+# Local LM experiments used to prepare the report
+/validate_lm.py
+/tune_lm.py
+/src/configs/validate_lm.yaml
+/src/configs/tune_lm.yaml
+/src/configs/evaluate_final.yaml
+/validate_rnnt_lm.py
+/src/configs/validate_rnnt_lm.yaml
+
+# Local dataset preparation
+/download_librispeech_hf.py
+
+# Local augmentation previews
+/preview_audio_augs.py

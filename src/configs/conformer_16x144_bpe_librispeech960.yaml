@@ -1,0 +1,27 @@
+defaults:
+  - conformer_16x144_bpe_finetune
+  - override datasets: librispeech960
+  - override transforms: log_mel_aug_specaug_light
+  - _self_
+
+evaluation_batch_size: 64
+evaluation_single_item_above_seconds: 20.0
+
+dataloader:
+  batch_size: 16
+
+text_encoder:
+  model_path: saved/conformer_bpe_finetune_20261017_210755_1880/bpe_256.model
+
+optimizer:
+  lr: 5e-6
+
+lr_scheduler:
+  max_lr: 5e-5
+
+trainer:
+  from_pretrained: saved/conformer_bpe_finetune_20261017_210755_1880/model_best.pth
+  monitor: min val_other_WER_(Argmax)
+
+writer:
+  run_name: conformer_bpe_ls960_specaug_b16_50k_v1

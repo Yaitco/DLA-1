@@ -37,12 +37,12 @@ class Reverb(nn.Module):
         tail[0, 0] = 1
 
         return tail
-    
+
     def forward(self, audio: torch.Tensor) -> torch.Tensor:
         if self.p < torch.rand(1):
             return audio
         rir = self._generate_rir(audio)
         reverberated = F.fftconvolve(audio, rir, mode="full")
-        reverberated = reverberated[:, :audio.shape[-1]]
+        reverberated = reverberated[:, : audio.shape[-1]]
         audio = (1 - self.wet) * audio + self.wet * reverberated
         return audio

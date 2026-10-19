@@ -21,7 +21,9 @@ class Conv2dSubsampling(nn.Module):
     def transform_input_lengths(
         input_lengths: int | torch.Tensor,
     ) -> int | torch.Tensor:
-        single_transform = lambda x: (x - 3) // 2 + 1
+        def single_transform(x):
+            return (x - 3) // 2 + 1
+
         return single_transform(single_transform(input_lengths))
 
     def forward(
@@ -40,9 +42,10 @@ class Conv2dSubsampling(nn.Module):
 
         lengths = self.transform_input_lengths(spectrogram_length)
         positions = torch.arange(features.shape[1], device=features.device)
-        
-        
-        padding_mask = positions.unsqueeze(0) >= lengths.to(features.device).unsqueeze(1)
+
+        padding_mask = positions.unsqueeze(0) >= lengths.to(features.device).unsqueeze(
+            1
+        )
         features = features.masked_fill(padding_mask.unsqueeze(-1), 0)
 
         return features, lengths
@@ -65,12 +68,11 @@ class FeedForwardModule(nn.Module):
         self.linear2 = nn.Linear(d_model * expansion_factor, d_model)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
-
         features = self.ln(features)
-        
+
         features = self.swish(self.linear1(features))
         self.dropout_(features)
-        
+
         features = self.linear2(features)
         self.dropout_(features)
 
@@ -78,16 +80,14 @@ class FeedForwardModule(nn.Module):
 
 
 class SelfAttentionModule(nn.Module):
-    def __init__(
-        self, d_model: int, num_heads: int = 4, dropout: float = 0.1
-    ) -> None:
+    def __init__(self, d_model: int, num_heads: int = 4, dropout: float = 0.1) -> None:
         super().__init__()
 
         self.ln = nn.LayerNorm(d_model)
 
         self.attention = RelativeMultiheadAttention(
-            d_model, 
-            num_heads=num_heads, 
+            d_model,
+            num_heads=num_heads,
             dropout=dropout,
         )
 
@@ -97,14 +97,13 @@ class SelfAttentionModule(nn.Module):
     def forward(
         self, features: torch.Tensor, padding_mask: torch.Tensor
     ) -> torch.Tensor:
-        
         normalized = self.ln(features)
 
         table = self.positional(features)
         out = self.attention(
             normalized,
             table,
-            padding_mask, 
+            padding_mask,
         )
 
         self.dropout_(out)
@@ -126,11 +125,13 @@ class RelativePositionalEncoding(nn.Module):
         distances = torch.arange(-(T - 1), T, device=features.device)
 
         frequencies = -torch.arange(0, D, 2, device=features.device) / D
-        frequencies = 10000 ** frequencies
+        frequencies = 10000**frequencies
 
         angles = distances.unsqueeze(-1) * frequencies.unsqueeze(0)
 
-        table = torch.zeros((2 * T - 1, D), device=features.device, dtype=features.dtype)
+        table = torch.zeros(
+            (2 * T - 1, D), device=features.device, dtype=features.dtype
+        )
 
         table[:, 0::2] = torch.sin(angles)
         table[:, 1::2] = torch.cos(angles)
@@ -138,9 +139,7 @@ class RelativePositionalEncoding(nn.Module):
 
 
 class RelativeMultiheadAttention(nn.Module):
-    def __init__(
-        self, d_model: int, num_heads: int = 4, dropout: float = 0.1
-    ) -> None:
+    def __init__(self, d_model: int, num_heads: int = 4, dropout: float = 0.1) -> None:
         super().__init__()
 
         assert num_heads > 0 and d_model % num_heads == 0
@@ -188,15 +187,15 @@ class RelativeMultiheadAttention(nn.Module):
         positions = self.pos_proj(positions)
         positions = self._split_heads(positions.unsqueeze(0)).squeeze(0)
 
-        content_scores = (q + self.u[None, :, None, :]) @ k.transpose(-2, -1) 
+        content_scores = (q + self.u[None, :, None, :]) @ k.transpose(-2, -1)
         position_scores = (q + self.v[None, :, None, :]) @ positions.transpose(-2, -1)
 
         T = content_scores.shape[-1]
-        arange = torch.arange(T, device=content_scores.device) 
-        idx = T - 1 + arange[:, None] - arange[None, :] 
+        arange = torch.arange(T, device=content_scores.device)
+        idx = T - 1 + arange[:, None] - arange[None, :]
         selected_position_scores = position_scores[:, :, arange[:, None], idx]
 
-        scores = (content_scores + selected_position_scores) / (self.head_dim ** 0.5)
+        scores = (content_scores + selected_position_scores) / (self.head_dim**0.5)
 
         scores = scores.masked_fill(padding_mask[:, None, None, :], float("-inf"))
         scores = F.softmax(scores, dim=-1)
@@ -206,7 +205,7 @@ class RelativeMultiheadAttention(nn.Module):
         out = self.out_proj(out)
 
         out = out.masked_fill(padding_mask.unsqueeze(-1), 0)
-        
+
         return out
 
 
@@ -223,10 +222,7 @@ class ConvolutionModule(nn.Module):
         self.glu = nn.GLU(dim=1)
 
         self.dw_conv = nn.Conv1d(
-            d_model, d_model, 
-            kernel_size, 
-            groups=d_model, 
-            padding=kernel_size // 2
+            d_model, d_model, kernel_size, groups=d_model, padding=kernel_size // 2
         )
 
         self.bn = nn.BatchNorm1d(d_model)
@@ -277,10 +273,12 @@ class ConformerCTC(nn.Module):
         self.blocks = nn.ModuleList(
             [
                 ConformerBlock(
-                    d_model, num_heads,
+                    d_model,
+                    num_heads,
                     expansion_factor,
-                    kernel_size, dropout,
-                ) 
+                    kernel_size,
+                    dropout,
+                )
                 for _ in range(num_layers)
             ]
         )
@@ -298,7 +296,9 @@ class ConformerCTC(nn.Module):
         features, lengths = self.subsampling(spectrogram, spectrogram_length)
 
         positions = torch.arange(features.shape[1], device=features.device)
-        padding_mask = positions.unsqueeze(0) >= lengths.to(features.device).unsqueeze(1)
+        padding_mask = positions.unsqueeze(0) >= lengths.to(features.device).unsqueeze(
+            1
+        )
 
         for block in self.blocks:
             features = block(features, padding_mask)
@@ -306,6 +306,7 @@ class ConformerCTC(nn.Module):
         out = self.linear(features)
         out = F.log_softmax(out, dim=-1)
         return {"log_probs": out, "log_probs_length": lengths}
+
 
 class ConformerBlock(nn.Module):
     def __init__(
@@ -319,14 +320,10 @@ class ConformerBlock(nn.Module):
         super().__init__()
 
         self.ffn1 = FeedForwardModule(
-            d_model, 
-            expansion_factor=expansion_factor, 
-            dropout=dropout
+            d_model, expansion_factor=expansion_factor, dropout=dropout
         )
         self.ffn2 = FeedForwardModule(
-            d_model, 
-            expansion_factor=expansion_factor, 
-            dropout=dropout
+            d_model, expansion_factor=expansion_factor, dropout=dropout
         )
 
         self.attention = SelfAttentionModule(d_model, num_heads, dropout)

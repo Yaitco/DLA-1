@@ -1,0 +1,15 @@
+defaults:
+  - conformer_train
+  - override transforms: log_mel_specaug
+  - _self_
+
+dataloader:
+  batch_size: 16
+
+trainer:
+  n_epochs: 25
+  save_period: 1
+
+writer:
+  run_name: conformer_specaug_b16_25k_v1
+  log_checkpoints: true

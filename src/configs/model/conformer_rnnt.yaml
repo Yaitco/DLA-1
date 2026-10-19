@@ -1,0 +1,14 @@
+_target_: src.model.ConformerRNNT
+n_feats: 128
+d_model: 144
+num_layers: 16
+num_heads: 4
+expansion_factor: 4
+kernel_size: 31
+conv_channels: 32
+dropout: 0.1
+embedding_dim: 144
+predictor_hidden_size: 320
+predictor_num_layers: 1
+joint_dim: 256
+blank_id: 0
